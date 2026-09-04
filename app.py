@@ -1,5 +1,5 @@
 import streamlit as st
-from google import genai
+import google.generativeai as genai
 
 # Page Configuration
 st.set_page_config(page_title="AI Content Assistant", page_icon="✍️", layout="centered")
@@ -7,9 +7,8 @@ st.set_page_config(page_title="AI Content Assistant", page_icon="✍️", layout
 st.title("✍️ AI Content Assistant")
 st.write("Generate customized posts with captions and hashtags powered by Gemini.")
 
-# Sidebar for API Key
-st.sidebar.header("Settings")
-api_key = st.sidebar.text_input("Enter your Gemini API Key", type="password")
+# Streamlit Secrets se API key lene ka tareeqa
+api_key = st.secrets.get("GEMINI_API_KEY")
 
 # Input Form
 with st.form("content_form"):
@@ -30,13 +29,14 @@ with st.form("content_form"):
 # Generation Logic
 if submit_btn:
     if not api_key:
-        st.error("Please enter your Gemini API Key in the sidebar.")
+        st.error("API Key nahi mili! Streamlit Cloud Settings > Secrets mein GEMINI_API_KEY add karein.")
     elif not topic or not target_audience:
         st.warning("Please fill in both the Topic and Target Audience fields.")
     else:
         try:
-            # Initialize Google GenAI Client
-            client = genai.Client(api_key=api_key)
+            # Configure Gemini API
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel("gemini-1.5-flash")
             
             prompt = f"""
             You are an expert social media manager. Create a complete post based on these details:
@@ -53,10 +53,7 @@ if submit_btn:
             """
             
             with st.spinner("Drafting your post..."):
-                response = client.models.generate_content(
-                    model="gemini-2.5-flash",
-                    contents=prompt,
-                )
+                response = model.generate_content(prompt)
                 
             st.success("Generated successfully!")
             st.markdown("---")
